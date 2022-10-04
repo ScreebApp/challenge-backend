@@ -1,4 +1,4 @@
-version: '3'
+version: '2.4' # seems conter intuitive but 2 version support helthcheck and not 3.
 
 services:
 
@@ -45,6 +45,12 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=screeb
       - RABBITMQ_DEFAULT_PASS=screeb
+    healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "status", "-qs", "--formatter=json"]
+        interval: 5s
+        timeout: 3s
+        retries: 5
+        start_period: 3s
 
   # https://github.com/conduktor/kafka-stack-docker-compose/blob/master/zk-single-kafka-single.yml
   zookeeper:
