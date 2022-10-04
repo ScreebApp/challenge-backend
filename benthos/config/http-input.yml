@@ -1,0 +1,85 @@
+http:
+  address: 0.0.0.0:4195
+  enabled: true
+
+logger:
+  level: INFO
+  format: logfmt
+  add_timestamp: true
+
+metrics:
+  prometheus: {}
+#  logger:
+#    push_interval: "5s"
+
+cache_resources:
+  - label: keycache
+    memory:
+      default_ttl: 60s
+
+input:
+  http_server:
+    address: "0.0.0.0:1234"
+    path: /events
+    allowed_verbs:
+      - POST
+    timeout: 15s
+
+
+# not ideal for delivery safety but needed for back-pressure on parquet local write (could be dissociate to guarantee delivery)
+# this could be improve by doing the parquet insert in a other daemon consuming from the queue at his rate.
+buffer: 
+  memory:
+    limit: 524288000 # 500M
+
+pipeline:
+  processors:
+    - dedupe:
+        cache: keycache
+        key: ${! json("message_id") }
+        drop_on_err: false
+
+output:
+  label: ""
+  broker:
+    pattern: fan_out # send to both parquet file and rabbitmq
+    outputs:
+    - amqp_0_9:
+        urls: 
+          - amqp://screeb:screeb@rabbitmq:5672/screeb
+        exchange: events
+        persistent: true
+        key: ${! json("message_id") }
+        type: "event"
+        content_encoding: "bytes"
+        content_type: "application/json"
+        max_in_flight: 1000
+        timeout: "1s"
+      processors:
+        - mapping:  meta = deleted() # remove http metadata to be cleared to send to rmq
+    # could be directly push to aws_s3:
+    - label: "parquet_column_data"
+      processors:
+        - mutation:  root.path = this.properties.path
+      broker:
+        outputs: 
+          - file:  
+              path: '/data/${! timestamp_unix() }-${! uuid_v4() }.parquet'
+              codec: all-bytes
+        batching:
+          count: 10000
+          period: 30s
+          processors:
+            - parquet_encode:
+                schema: # there is probably a better format
+                  - name: user_id
+                    type: BYTE_ARRAY
+                  - name: event_type
+                    type: BYTE_ARRAY
+                  - name: path
+                    type: BYTE_ARRAY
+                    optional: true
+                  - name: triggered_at
+                    type: BYTE_ARRAY
+                default_compression: uncompressed
+#                default_compression: zstd

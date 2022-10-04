@@ -1,0 +1,14 @@
+version: '2.4'
+
+services:
+  benthos:
+    image: jeffail/benthos
+    volumes:
+      - ./config:/config
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4195/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s

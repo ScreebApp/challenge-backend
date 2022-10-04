@@ -1,0 +1,25 @@
+{
+    "users": [ 
+      { "name": "screeb", "password": "screeb", "tags": "administrator,monitoring,management" }
+    ],
+    "vhosts": [ 
+      { "name": "/" },
+      { "name": "screeb" }
+    ],
+    "permissions": [
+      { "user": "screeb", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*"},
+      { "user": "screeb", "vhost": "screeb", "configure": ".*", "write": ".*", "read": ".*"}
+    ],
+    "parameters": [],
+    "policies": [],
+    "exchanges": [
+      { "name": "events", "vhost": "screeb", "type": "fanout", "durable": true, "auto_delete": false, "internal": false, "arguments": {} }    
+    ],
+    "queues": [
+      { "name": "events", "vhost": "screeb", "durable": true, "auto_delete": false, "arguments": {} }    
+    ],
+    "bindings": [
+      { "source": "events", "vhost": "screeb", "destination": "events", "destination_type": "queue", "routing_key": "#", "arguments": {} }
+    ]
+  }
+  

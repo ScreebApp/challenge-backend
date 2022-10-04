@@ -64,6 +64,27 @@ Events will be delivered at least once (dedup based on `message_id`) and may be 
 
 Your architecture should be able to handle at least 10k events per second in production environment.
 
+#### Implementation 1 : the best code is no code
+
+I don't know if it is allowed but if facing this challenge in real life situation I would simply don't write this program and use off the shell program like [benthos](https://www.benthos.dev). This offer the ability to quickly have a program with everything needed to run in the cloud (health & ready probe, metrics, logger, signal handling, scale, purge of message at stop, ...).
+
+So in this logic I implemented with the bonus OLAP parquet file.
+
+To start it :
+```bash
+# start benthos and dependencies (rabbitmq)
+docker-compose up benthos
+# send HTTP calls
+go run *.go   --requests 10000        --concurrency 100       --url-cardinality 1000000   --endpoint-url http://localhost:1234/event
+# message should be deduplicate in rabbitmq and we can extract some data from parquet files:
+dsq --pretty benthos/data/*.parquet 'select User_id, count(*), GROUP_CONCAT(Path) from {0} WHERE Event_type = "page" GROUP BY User_id HAVING count(*) > 1 ORDER BY count(*)'
+# cleanup
+docker-compose down && rm docker-compose benthos/data/*.parquet 
+```
+
+If needed, dsq is a tool to parse data files: https://github.com/multiprocessio/dsq
+To install it: `go install github.com/multiprocessio/dsq@latest`
+
 ### Step 2
 
 Choose between the 2 following steps:

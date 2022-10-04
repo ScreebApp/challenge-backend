@@ -42,9 +42,9 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=screeb
-      - RABBITMQ_DEFAULT_PASS=screeb
+    volumes:
+      - ./docker/rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
     healthcheck:
         test: ["CMD", "rabbitmq-diagnostics", "status", "-qs", "--formatter=json"]
         interval: 5s
@@ -83,3 +83,17 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
     depends_on:
       - zookeeper
+
+  benthos:
+    extends:
+      file: benthos/docker-compose.yml
+      service: benthos
+    command: 
+      - "-c" 
+      - "/config/http-input.yml"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - 1234:1234
+      - 4195:4195
