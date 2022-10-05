@@ -64,7 +64,7 @@ Events will be delivered at least once (dedup based on `message_id`) and may be 
 
 Your architecture should be able to handle at least 10k events per second in production environment.
 
-#### Implementation 1 : the best code is no code
+#### Implementation 1 : don't re-invent the wheel / the best code is no code
 
 I don't know if it is allowed but if facing this challenge in real life situation I would simply don't write this program and use off the shell program like [benthos](https://www.benthos.dev). This offer the ability to quickly have a program with everything needed to run in the cloud (health & ready probe, metrics, logger, signal handling, scale, purge of message at stop, ...).
 
