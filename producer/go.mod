@@ -8,7 +8,7 @@ require (
 	github.com/samber/lo v1.28.2
 	github.com/samber/mo v1.5.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.1
 )
 
 require (
